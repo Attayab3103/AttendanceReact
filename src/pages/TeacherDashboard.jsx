@@ -31,7 +31,7 @@ const TeacherDashboard = () => {
     if (password === 'teacher123') {
       setLoggedIn(true);
     } else {
-      alert('Incorrect password!');
+      toast.error('Incorrect password!');
     }
   };
 
