@@ -11,6 +11,7 @@ const ParentDashboard = () => {
   const [student, setStudent] = useState(null);
   const [attendanceData, setAttendanceData] = useState({});
   const [error, setError] = useState('');
+  const [studentName, setStudentName] = useState('');
 
   useEffect(() => {
     // Load attendance from Firebase
@@ -24,9 +25,11 @@ const ParentDashboard = () => {
     const foundStudent = studentsData.find(s => s.rollNo === rollNo);
     if (foundStudent) {
       setStudent(foundStudent);
+      setStudentName(foundStudent.name);
       setError('');
     } else {
       setStudent(null);
+      setStudentName('');
       setError('Student not found. Please enter a valid roll number.');
     }
   };
@@ -62,10 +65,13 @@ const ParentDashboard = () => {
         </div>
 
         {student && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <AttendanceSummary attendance={attendanceData} rollNo={student.rollNo} />
-            <AttendanceTable attendanceRecords={attendanceData[student.rollNo] || {}} />
-          </div>
+          <>
+            <div className="mb-4 text-lg font-semibold text-blue-700">Student Name: {studentName}</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <AttendanceSummary attendance={attendanceData} rollNo={student.rollNo} />
+              <AttendanceTable attendanceRecords={attendanceData[student.rollNo] || {}} />
+            </div>
+          </>
         )}
       </div>
     </div>
