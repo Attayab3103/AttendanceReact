@@ -1,21 +1,5 @@
 [
   { "id": 1, "name": "Ibrahim", "rollNo": "1" },
   { "id": 2, "name": "Faiq", "rollNo": "2" },
-  { "id": 3, "name": "Ahmed", "rollNo": "3" },
-  { "id": 4, "name": "Abdullah", "rollNo": "4" },
-  { "id": 5, "name": "Abdul Rehman", "rollNo": "5" },
-  { "id": 6, "name": "Zahra", "rollNo": "6" },
-  { "id": 7, "name": "Humna", "rollNo": "7" },
-  { "id": 8, "name": "Aiza", "rollNo": "8" },
-  { "id": 9, "name": "Rayan", "rollNo": "9" },
-  { "id": 10, "name": "Ali Hassan", "rollNo": "10" },
-  { "id": 11, "name": "Hashir", "rollNo": "11" },
-  { "id": 12, "name": "Abdul Hadi", "rollNo": "12" },
-  { "id": 13, "name": "Noor Zahra", "rollNo": "13" },
-  { "id": 14, "name": "Irha Ahmed", "rollNo": "14" },
-  { "id": 15, "name": "Aheel Naveed", "rollNo": "15" },
-  { "id": 16, "name": "Shazain Faheem", "rollNo": "16" },
-  { "id": 17, "name": "Musa Tahir", "rollNo": "17" },
-  { "id": 18, "name": "Abdur Rehman", "rollNo": "18" },
-  { "id": 19, "name": "Umer Hassan", "rollNo": "19" }
+  { "id": 3, "name": "Ahmed", "rollNo": "3" }
 ]

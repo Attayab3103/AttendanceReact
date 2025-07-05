@@ -11,6 +11,8 @@ import { ref, set, onValue, remove } from 'firebase/database';
 const SUBJECTS = ["PSED", "KUW", "ENGLISH", "URDU", "MATH"];
 const ACTIVITY_TYPES = ["Quiz", "Assignment", "Project", "Classwork", "Other"];
 
+const ACTIVITY_STATUS = ["Submitted", "Not Submitted"];
+
 const TeacherDashboard = () => {
   const [password, setPassword] = useState("");
   const [loggedIn, setLoggedIn] = useState(false);
@@ -31,8 +33,7 @@ const TeacherDashboard = () => {
   const [activitySubject, setActivitySubject] = useState("");
   const [activityDate, setActivityDate] = useState("");
   const [activityDescription, setActivityDescription] = useState("");
-  const [activityTotalMarks, setActivityTotalMarks] = useState("");
-  const [activityMarks, setActivityMarks] = useState({}); // {rollNo: marks}
+  const [activityStatus, setActivityStatus] = useState({}); // {rollNo: status}
   const [activityData, setActivityData] = useState({});
   const [editingActivityDate, setEditingActivityDate] = useState(null);
 
@@ -130,13 +131,12 @@ const TeacherDashboard = () => {
     setActivityDate(date);
     setActivitySubject(activity.subject);
     setActivityDescription(activity.description || "");
-    setActivityTotalMarks(activity.totalMarks || "");
-    // Load marks for all students for this activity date
-    const marksObj = {};
+    // Load status for all students for this activity date
+    const statusObj = {};
     studentsData.forEach((student) => {
-      marksObj[student.rollNo] = (activityData[student.rollNo] && activityData[student.rollNo][date]?.marks) || "";
+      statusObj[student.rollNo] = (activityData[student.rollNo] && activityData[student.rollNo][date]?.status) || "";
     });
-    setActivityMarks(marksObj);
+    setActivityStatus(statusObj);
     setEditingActivityDate(date);
   };
 
@@ -152,31 +152,30 @@ const TeacherDashboard = () => {
     }
   };
   // --- Activity Save Handler ---
-  const handleActivityMarksChange = (rollNo, value) => {
-    setActivityMarks((prev) => ({ ...prev, [rollNo]: value }));
+  const handleActivityStatusChange = (rollNo, value) => {
+    setActivityStatus((prev) => ({ ...prev, [rollNo]: value }));
   };
 
   const handleSaveActivity = async () => {
-    if (!activitySubject || !activityDate || !activityDescription || !activityTotalMarks) {
+    if (!activitySubject || !activityDate || !activityDescription) {
       toast.error("Please fill all activity details.");
       return;
     }
     try {
-      // For both new and edit, require all marks fields to be filled
-      const allFilled = studentsData.every((student) => activityMarks[student.rollNo] !== undefined && activityMarks[student.rollNo] !== "");
+      // For both new and edit, require all status fields to be filled
+      const allFilled = studentsData.every((student) => activityStatus[student.rollNo] !== undefined && activityStatus[student.rollNo] !== "");
       if (!allFilled) {
-        toast.error("Please enter marks for all students.");
+        toast.error("Please select status for all students.");
         return;
       }
       if (editingActivityDate) {
         await Promise.all(
           studentsData.map((student) => {
-            const marks = activityMarks[student.rollNo];
+            const status = activityStatus[student.rollNo];
             return set(ref(db, `activities/${student.rollNo}/${editingActivityDate}`), {
               subject: activitySubject,
               description: activityDescription,
-              totalMarks: activityTotalMarks,
-              marks: marks,
+              status: status,
             });
           })
         );
@@ -185,23 +184,21 @@ const TeacherDashboard = () => {
       } else {
         await Promise.all(
           studentsData.map((student) => {
-            const marks = activityMarks[student.rollNo];
+            const status = activityStatus[student.rollNo];
             return set(
               ref(db, `activities/${student.rollNo}/${activityDate}`),
               {
                 subject: activitySubject,
                 description: activityDescription,
-                totalMarks: activityTotalMarks,
-                marks: marks,
+                status: status,
               }
             );
           })
         );
         toast.success("Activity saved successfully!");
       }
-      setActivityMarks({});
+      setActivityStatus({});
       setActivityDescription("");
-      setActivityTotalMarks("");
     } catch (err) {
       toast.error("Failed to save activity.");
     }
@@ -248,7 +245,8 @@ const TeacherDashboard = () => {
         <div className="mb-6 text-center">
           <div className="flex items-center justify-center mb-2">
             <svg className="w-10 h-10 text-blue-500 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" /></svg>
-            <h1 className="text-3xl font-extrabold text-gray-800 tracking-tight">Attendance App</h1>
+            {/* Use Navbar for logo and branding, remove direct logo import to avoid blank page issues */}
+            <span className="text-3xl font-extrabold text-gray-800 tracking-tight align-middle">DAR-E-ARQAM SCHOOL (JOHAR TOWN)</span>
           </div>
           <p className="text-lg text-gray-600">Teacher Login</p>
         </div>
@@ -330,7 +328,7 @@ const TeacherDashboard = () => {
   // --- Main Render ---
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-green-100 to-white flex flex-col">
-      <Navbar />
+      <Navbar brandName="DAR-E-ARQAM SCHOOL (JOHAR TOWN)" />
       <div className="container mx-auto p-2 sm:p-4 flex-grow w-full max-w-2xl">
         <div className="flex items-center mb-4">
           <svg className="w-8 h-8 text-blue-500 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" /></svg>
@@ -594,16 +592,6 @@ const TeacherDashboard = () => {
                 />
               </div>
               <div>
-                <label className="block text-gray-700 font-medium mb-1">Total Marks</label>
-                <input
-                  type="number"
-                  className="border border-gray-300 rounded-md p-2 w-full"
-                  value={activityTotalMarks}
-                  onChange={(e) => setActivityTotalMarks(e.target.value)}
-                  min="1"
-                />
-              </div>
-              <div>
                 <label className="block text-gray-700 font-medium mb-1">Description</label>
                 <input
                   type="text"
@@ -620,7 +608,7 @@ const TeacherDashboard = () => {
                   <tr className="bg-blue-100">
                     <th className="py-2 px-4 border-b text-left">Roll No</th>
                     <th className="py-2 px-4 border-b text-left">Name</th>
-                    <th className="py-2 px-4 border-b text-left">Marks</th>
+                    <th className="py-2 px-4 border-b text-left">Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -629,13 +617,22 @@ const TeacherDashboard = () => {
                       <td className="py-2 px-4 border-b">{student.rollNo}</td>
                       <td className="py-2 px-4 border-b">{student.name}</td>
                       <td className="py-2 px-4 border-b">
-                        <input
-                          type="number"
-                          className="border border-gray-300 rounded-md p-1 w-24"
-                          value={activityMarks[student.rollNo] || ""}
-                          onChange={(e) => handleActivityMarksChange(student.rollNo, e.target.value)}
-                          min="0"
-                        />
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            className={`py-1 px-3 rounded-md text-sm font-semibold shadow border transition duration-200 focus:outline-none ${activityStatus[student.rollNo] === 'Submitted' ? 'bg-green-500 text-white border-green-600' : 'bg-white text-green-700 border-green-400 hover:bg-green-50'}`}
+                            onClick={() => handleActivityStatusChange(student.rollNo, 'Submitted')}
+                          >
+                            Submitted
+                          </button>
+                          <button
+                            type="button"
+                            className={`py-1 px-3 rounded-md text-sm font-semibold shadow border transition duration-200 focus:outline-none ${activityStatus[student.rollNo] === 'Not Submitted' ? 'bg-red-500 text-white border-red-600' : 'bg-white text-red-700 border-red-400 hover:bg-red-50'}`}
+                            onClick={() => handleActivityStatusChange(student.rollNo, 'Not Submitted')}
+                          >
+                            Not Submitted
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -658,7 +655,6 @@ const TeacherDashboard = () => {
                       <th className="py-2 px-4 border-b text-left">Date</th>
                       <th className="py-2 px-4 border-b text-left">Subject</th>
                       <th className="py-2 px-4 border-b text-left">Description</th>
-                      <th className="py-2 px-4 border-b text-left">Total Marks</th>
                       <th className="py-2 px-4 border-b text-left">Actions</th>
                     </tr>
                   </thead>
@@ -671,7 +667,6 @@ const TeacherDashboard = () => {
                             <td className="py-2 px-4 border-b">{date}</td>
                             <td className="py-2 px-4 border-b">{activity.subject}</td>
                             <td className="py-2 px-4 border-b">{activity.description}</td>
-                            <td className="py-2 px-4 border-b">{activity.totalMarks}</td>
                             <td className="py-2 px-4 border-b">
                               <button className="text-blue-600 hover:underline mr-2" onClick={() => handleEditActivity(date, activity)}>Edit</button>
                               <button className="text-red-600 hover:underline" onClick={() => handleDeleteActivity(date)}>Delete</button>

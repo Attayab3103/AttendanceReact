@@ -48,7 +48,7 @@ const ParentDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-100 via-blue-100 to-white flex flex-col">
-      <Navbar />
+      <Navbar brandName="DAR-E-ARQAM SCHOOL (JOHAR TOWN)" />
       <div className="container mx-auto p-2 sm:p-4 flex-grow w-full max-w-2xl">
         <div className="flex items-center mb-4">
           <svg className="w-8 h-8 text-green-500 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -128,8 +128,7 @@ const ParentDashboard = () => {
                       <tr className="bg-green-100">
                         <th className="py-2 px-4 border-b text-left">Date</th>
                         <th className="py-2 px-4 border-b text-left">Subject</th>
-                        <th className="py-2 px-4 border-b text-left">Marks</th>
-                        <th className="py-2 px-4 border-b text-left">Total Marks</th>
+                        <th className="py-2 px-4 border-b text-left">Material Submitted</th>
                         <th className="py-2 px-4 border-b text-left">Description</th>
                       </tr>
                     </thead>
@@ -138,8 +137,7 @@ const ParentDashboard = () => {
                         <tr key={date}>
                           <td className="py-2 px-4 border-b">{date}</td>
                           <td className="py-2 px-4 border-b">{activity.subject}</td>
-                          <td className="py-2 px-4 border-b">{activity.marks}</td>
-                          <td className="py-2 px-4 border-b">{activity.totalMarks}</td>
+                          <td className="py-2 px-4 border-b">{activity.status}</td>
                           <td className="py-2 px-4 border-b">{activity.description}</td>
                         </tr>
                       ))}
