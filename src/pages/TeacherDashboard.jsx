@@ -8,7 +8,7 @@ import { db } from '../firebase';
 import { ref, set, onValue, remove } from 'firebase/database';
 
 
-const SUBJECTS = ["Urdu", "Maths"];
+const SUBJECTS = ["PSED", "KUW", "ENGLISH", "URDU", "MATH"];
 const ACTIVITY_TYPES = ["Quiz", "Assignment", "Project", "Classwork", "Other"];
 
 const TeacherDashboard = () => {
