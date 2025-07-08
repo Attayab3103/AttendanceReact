@@ -1,0 +1,1 @@
+Deprecated: All class data is now loaded from Firebase.

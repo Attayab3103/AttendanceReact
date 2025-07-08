@@ -2,47 +2,89 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import AttendanceTable from '../components/AttendanceTable';
 import AttendanceSummary from '../components/AttendanceSummary';
-import studentsData from '../data/students.json';
+// import studentsData from '../data/students.json';
+// import classesData from '../data/classes.json';
 import { db } from '../firebase';
 import { ref, onValue } from 'firebase/database';
 
+
 const ParentDashboard = () => {
+  const [selectedClass, setSelectedClass] = useState(null);
   const [rollNo, setRollNo] = useState('');
   const [student, setStudent] = useState(null);
   const [attendanceData, setAttendanceData] = useState({});
   const [testData, setTestData] = useState({});
   const [activityData, setActivityData] = useState({});
   const [error, setError] = useState('');
-  const [studentName, setStudentName] = useState('');
+  const [allStudentsData, setAllStudentsData] = useState([]);
+  const [allClassesData, setAllClassesData] = useState([]);
 
   useEffect(() => {
-    // Load attendance from Firebase
+    // Load students from Firebase
+    const studentsRef = ref(db, 'students');
+    const unsubStudents = onValue(studentsRef, (snapshot) => {
+      const val = snapshot.val() || {};
+      setAllStudentsData(Object.values(val));
+    });
+    // Load classes from Firebase
+    const classesRef = ref(db, 'classes');
+    const unsubClasses = onValue(classesRef, (snapshot) => {
+      const val = snapshot.val() || {};
+      setAllClassesData(Object.values(val));
+    });
+    // Load attendance from Firebase (by student id)
     const attendanceRef = ref(db, 'attendance');
-    onValue(attendanceRef, (snapshot) => {
+    const unsubAttendance = onValue(attendanceRef, (snapshot) => {
       setAttendanceData(snapshot.val() || {});
     });
-    // Load tests from Firebase
+    // Load tests from Firebase (by student id)
     const testsRef = ref(db, 'tests');
-    onValue(testsRef, (snapshot) => {
+    const unsubTests = onValue(testsRef, (snapshot) => {
       setTestData(snapshot.val() || {});
     });
-    // Load activities from Firebase
+    // Load activities from Firebase (by student id)
     const activitiesRef = ref(db, 'activities');
-    onValue(activitiesRef, (snapshot) => {
+    const unsubActivities = onValue(activitiesRef, (snapshot) => {
       setActivityData(snapshot.val() || {});
     });
+    return () => {
+      unsubStudents();
+      unsubClasses();
+      unsubAttendance();
+      unsubTests();
+      unsubActivities();
+    };
   }, []);
 
-  const handleRollNoSubmit = () => {
-    const foundStudent = studentsData.find(s => s.rollNo === rollNo);
+  const handleClassSelect = (cls) => {
+    setSelectedClass(cls);
+    setRollNo('');
+    setStudent(null);
+    setError('');
+  };
+
+  const handleRollNoSubmit = (e) => {
+    e.preventDefault();
+    setStudent(null);
+    setError('');
+    if (!rollNo.trim()) {
+      setError('Please enter a student ID.');
+      return;
+    }
+    if (!selectedClass) {
+      setError('Please select a class.');
+      return;
+    }
+    // Find by roll number and class
+    const foundStudent = allStudentsData.find(
+      (s) => String(s.classId) === String(selectedClass.id) && String(s.rollNo) === rollNo.trim()
+    );
     if (foundStudent) {
       setStudent(foundStudent);
-      setStudentName(foundStudent.name);
       setError('');
     } else {
       setStudent(null);
-      setStudentName('');
-      setError('Student not found. Please enter a valid roll number.');
+      setError('Student not found in this class.');
     }
   };
 
@@ -56,40 +98,57 @@ const ParentDashboard = () => {
         </div>
         <p className="text-gray-600 mb-6">Check your child's attendance, test, and activity reports easily.</p>
 
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-xl mb-6 border-t-4 border-green-400 w-full">
-          <h3 className="text-2xl font-semibold mb-4 text-green-700">Enter Student Roll Number to View Report</h3>
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4">
-            <input
-              type="text"
-              className="border border-gray-300 p-2 rounded-md flex-grow focus:ring-2 focus:ring-green-300 text-base sm:text-lg"
-              placeholder="Student Roll Number"
-              value={rollNo}
-              onChange={(e) => setRollNo(e.target.value)}
-            />
-            <button
-              onClick={handleRollNoSubmit}
-              className="bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 transition duration-300 shadow text-base sm:text-lg"
-            >
-              View Student Report
-            </button>
+        <div className="mb-8">
+          <h3 className="text-2xl font-semibold mb-4 text-green-700">Select Your Child's Class</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {allClassesData.map((cls) => (
+              <button
+                key={cls.id}
+                className={`p-6 rounded-lg shadow-xl border-t-4 text-xl font-semibold transition-all duration-200 w-full text-center ${selectedClass && selectedClass.id === cls.id ? 'bg-blue-100 border-blue-500 text-blue-800' : 'bg-white border-gray-200 hover:bg-blue-50 text-gray-800'}`}
+                onClick={() => handleClassSelect(cls)}
+              >
+                {cls.name}
+              </button>
+            ))}
           </div>
-          {error && <p className="text-red-500 mb-4">{error}</p>}
         </div>
+
+        {selectedClass && (
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-xl mb-6 border-t-4 border-green-400 w-full">
+            <h3 className="text-2xl font-semibold mb-4 text-green-700">Enter Student ID for {selectedClass.name}</h3>
+            <form className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4" onSubmit={handleRollNoSubmit}>
+              <input
+                type="text"
+                className="border border-gray-300 p-2 rounded-md flex-grow focus:ring-2 focus:ring-green-300 text-base sm:text-lg"
+                placeholder="Student ID"
+                value={rollNo}
+                onChange={(e) => setRollNo(e.target.value)}
+              />
+              <button
+                type="submit"
+                className="bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 transition duration-300 shadow text-base sm:text-lg"
+              >
+                View Student Report
+              </button>
+            </form>
+            {error && <p className="text-red-500 mb-4">{error}</p>}
+          </div>
+        )}
 
         {student && (
           <>
-            <div className="mb-4 text-lg font-semibold text-blue-700">Student Name: {studentName}</div>
+            <div className="mb-4 text-lg font-semibold text-blue-700">Student Name: {student.name}</div>
             <div className="mt-8 bg-white p-4 sm:p-6 rounded-lg shadow-xl border-t-4 border-blue-400 w-full">
               <h3 className="text-2xl font-semibold mb-4 text-blue-700">Attendance Report</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                <AttendanceSummary attendance={attendanceData} rollNo={student.rollNo} />
-                <AttendanceTable attendanceRecords={attendanceData[student.rollNo] || {}} />
+                <AttendanceSummary attendance={attendanceData} rollNo={student.id} />
+                <AttendanceTable attendanceRecords={attendanceData[student.id] || {}} />
               </div>
             </div>
             {/* Test Report Section */}
             <div className="mt-8 bg-white p-4 sm:p-6 rounded-lg shadow-xl border-t-4 border-blue-400 w-full">
               <h3 className="text-2xl font-semibold mb-4 text-blue-700">Test Report</h3>
-              {testData[student.rollNo] ? (
+              {testData[student.id] ? (
                 <div className="overflow-x-auto">
                   <table className="min-w-full border">
                     <thead>
@@ -102,15 +161,17 @@ const ParentDashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {Object.entries(testData[student.rollNo]).sort((a, b) => a[0].localeCompare(b[0])).map(([date, test]) => (
-                        <tr key={date}>
-                          <td className="py-2 px-4 border-b">{date}</td>
-                          <td className="py-2 px-4 border-b">{test.subject}</td>
-                          <td className="py-2 px-4 border-b">{test.marks}</td>
-                          <td className="py-2 px-4 border-b">{test.totalMarks}</td>
-                          <td className="py-2 px-4 border-b">{test.description}</td>
-                        </tr>
-                      ))}
+                      {Object.entries(testData[student.id])
+                        .sort((a, b) => a[0].localeCompare(b[0]))
+                        .map(([date, test]) => (
+                          <tr key={date}>
+                            <td className="py-2 px-4 border-b">{date}</td>
+                            <td className="py-2 px-4 border-b">{test.subject}</td>
+                            <td className="py-2 px-4 border-b">{test.marks}</td>
+                            <td className="py-2 px-4 border-b">{test.totalMarks}</td>
+                            <td className="py-2 px-4 border-b">{test.description}</td>
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
                 </div>
@@ -121,7 +182,7 @@ const ParentDashboard = () => {
             {/* Activity Report Section */}
             <div className="mt-8 bg-white p-4 sm:p-6 rounded-lg shadow-xl border-t-4 border-green-400 w-full">
               <h3 className="text-2xl font-semibold mb-4 text-green-700">Activity Report</h3>
-              {activityData[student.rollNo] ? (
+              {activityData[student.id] ? (
                 <div className="overflow-x-auto">
                   <table className="min-w-full border">
                     <thead>
@@ -133,14 +194,16 @@ const ParentDashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {Object.entries(activityData[student.rollNo]).sort((a, b) => a[0].localeCompare(b[0])).map(([date, activity]) => (
-                        <tr key={date}>
-                          <td className="py-2 px-4 border-b">{date}</td>
-                          <td className="py-2 px-4 border-b">{activity.subject}</td>
-                          <td className="py-2 px-4 border-b">{activity.status}</td>
-                          <td className="py-2 px-4 border-b">{activity.description}</td>
-                        </tr>
-                      ))}
+                      {Object.entries(activityData[student.id])
+                        .sort((a, b) => a[0].localeCompare(b[0]))
+                        .map(([date, activity]) => (
+                          <tr key={date}>
+                            <td className="py-2 px-4 border-b">{date}</td>
+                            <td className="py-2 px-4 border-b">{activity.subject}</td>
+                            <td className="py-2 px-4 border-b">{activity.status}</td>
+                            <td className="py-2 px-4 border-b">{activity.description}</td>
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
                 </div>
