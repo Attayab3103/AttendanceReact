@@ -2,6 +2,14 @@
 
 A modern, Firebase-powered school attendance and reporting system for teachers, parents, and admins. Built with React, Vite, React Router, and Tailwind CSS. Supports robust multi-teacher, multi-parent, and admin flows with real-time data, PIN-based login, and a beautiful, mobile-friendly UI.
 
+[![Vercel](https://vercelbadge.vercel.app/api/attendance-react-weld/vercel)](https://attendance-react-weld.vercel.app/)
+
+---
+
+## 🚀 Demo
+
+**Live Demo:** [attendance-react-weld.vercel.app](https://attendance-react-weld.vercel.app/)
+
 ---
 
 ## Features
@@ -19,13 +27,54 @@ A modern, Firebase-powered school attendance and reporting system for teachers, 
 
 ---
 
+## How It Works
+
+### Admin Flow
+- The admin logs in at `/admin` using a secure PIN (set in your Firebase or code).
+- Admin can create new teacher accounts, edit teacher names and PINs, or delete teachers.
+- All teacher data is stored in Firebase and updates in real time for all users.
+
+### Teacher Flow
+- Teachers log in at `/teacher` using their unique PIN (set by the admin).
+- After login, teachers see a dashboard with their name and a list of their classes.
+- Teachers can:
+  - **Create new classes** (which are linked to their account in Firebase)
+  - **Delete classes** (removes the class and unassigns all students)
+  - **Select a class** to manage students, attendance, tests, and activities
+  - **Enroll students** by name (auto-assigns roll numbers)
+  - **Remove students** (unassigns from class and reindexes roll numbers)
+  - **Mark attendance** for each student by date (present/absent)
+  - **Add/edit/delete test records** (subject, date, marks, description)
+  - **Add/edit/delete activity records** (subject, date, status, description)
+- All actions update Firebase instantly and are reflected for parents and admins.
+
+### Parent Flow
+- Parents go to `/parent` to view their child's reports.
+- The dashboard shows all teachers, each with their classes as tiles.
+- Parents select the relevant teacher and then the class.
+- They enter their child's roll number (as assigned by the teacher) to view:
+  - **Attendance report** (summary and daily breakdown)
+  - **Test report** (all test records for the student)
+  - **Activity report** (all activities for the student)
+- All data is live and always up to date from Firebase.
+
+### Data Model
+- **Teachers**: `{ id, name, pin, classes: [classId, ...] }`
+- **Classes**: `{ id, name, teacherId, studentIds: [...] }`
+- **Students**: `{ id, name, rollNo, classId }`
+- **Attendance**: `{ [studentId]: { [date]: 'Present' | 'Absent' } }`
+- **Tests**: `{ [studentId]: { [date]: { subject, marks, totalMarks, description } } }`
+- **Activities**: `{ [studentId]: { [date]: { subject, status, description } } }`
+
+---
+
 ## Quick Start
 
 ### 1. Clone & Install
 
 ```bash
 # Clone the repo
-git clone https://github.com/your-username/attendance-app.git
+git clone https://github.com/<your-username>/attendance-app.git
 cd attendance-app
 
 # Install dependencies
@@ -34,8 +83,8 @@ npm install
 
 ### 2. Firebase Setup
 - Create a Firebase project and Realtime Database
-- Copy your config to `src/firebase.js` (already set up for demo)
-- Import the provided JSON (see `/data` or ask admin) into your Firebase DB for demo data
+- Copy your config to `src/firebase.js`
+- Import your initial data (see `/data` or create your own) into your Firebase DB for demo data
 
 ### 3. Run Locally
 
@@ -60,14 +109,14 @@ Visit [http://localhost:5173](http://localhost:5173)
 
 ### Admin Dashboard
 - Go to `/admin`
-- Enter the admin PIN (default: `Date@3103`)
+- Enter the admin PIN (set in your code or Firebase)
 - Create, edit, or delete teacher accounts and PINs
 
 ---
 
 ## Project Structure
 
-```
+```text
 attendance-app/
 ├── Dockerfile
 ├── index.html
@@ -106,6 +155,7 @@ attendance-app/
 ### Vercel
 - Push to GitHub and import the repo in Vercel
 - Set up environment variables if needed (Firebase config is in `src/firebase.js`)
+- Or use the provided [live demo](https://attendance-react-weld.vercel.app/)
 - Deploy!
 
 ### Docker
@@ -123,11 +173,11 @@ docker run -p 3000:3000 attendance-app
 
 ---
 
-## Credits
-- Built with ❤️ by your team using React, Vite, Tailwind CSS, and Firebase.
-- Inspired by modern school management needs.
+## Contributing
+
+Contributions are welcome! Please open issues or submit pull requests for improvements and bug fixes.
 
 ---
 
 ## License
-MIT (or your preferred license)
+MIT
