@@ -21,10 +21,14 @@ const HomePage = () => {
             I'm a Teacher
           </Link>
           <p className="text-xs text-gray-500 mb-2">Teachers: Login with your unique PIN. You can manage multiple classes and mark attendance, tests, and activities for each student. If you don't have a PIN, contact the admin.</p>
-          <Link to="/parent" className="block bg-green-500 text-white py-3 px-4 rounded-md text-base sm:text-xl hover:bg-green-600 transition duration-300 shadow">
+          <Link to="/parent" className="block bg-green-500 text-white py-3 px-4 rounded-md text-base sm:text-xl mb-4 hover:bg-green-600 transition duration-300 shadow">
             I'm a Parent
           </Link>
-          <p className="text-xs text-gray-500">Parents: Enter your child's student ID to view attendance, test results, and activities. If you have multiple children, you can view each child's progress separately.</p>
+          <p className="text-xs text-gray-500 mb-2">Parents: Enter your child's student ID to view attendance, test results, and activities. If you have multiple children, you can view each child's progress separately.</p>
+          <Link to="/admin" className="block bg-yellow-500 text-white py-3 px-4 rounded-md text-base sm:text-xl hover:bg-yellow-600 transition duration-300 shadow mt-4">
+            I'm an Admin
+          </Link>
+          <p className="text-xs text-yellow-700 mt-2">Admins: Create new teacher PINs and manage teacher accounts.</p>
         </div>
       </div>
     </div>

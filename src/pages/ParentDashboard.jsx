@@ -18,6 +18,22 @@ const ParentDashboard = () => {
   const [error, setError] = useState('');
   const [allStudentsData, setAllStudentsData] = useState([]);
   const [allClassesData, setAllClassesData] = useState([]);
+  const [allTeachersData, setAllTeachersData] = useState([]);
+  const [teacherMap, setTeacherMap] = useState({});
+  // Load all teachers from Firebase
+  useEffect(() => {
+    const teachersRef = ref(db, 'teachers');
+    const unsubTeachers = onValue(teachersRef, (snapshot) => {
+      const val = snapshot.val() || {};
+      const arr = Object.values(val);
+      setAllTeachersData(arr);
+      // Build a map for quick lookup
+      const map = {};
+      arr.forEach(t => { if (t && t.id) map[t.id] = t; });
+      setTeacherMap(map);
+    });
+    return () => unsubTeachers();
+  }, []);
 
   useEffect(() => {
     // Load students from Firebase
@@ -98,18 +114,31 @@ const ParentDashboard = () => {
         </div>
         <p className="text-gray-600 mb-6">Check your child's attendance, test, and activity reports easily.</p>
 
+
         <div className="mb-8">
-          <h3 className="text-2xl font-semibold mb-4 text-green-700">Select Your Child's Class</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {allClassesData.map((cls) => (
-              <button
-                key={cls.id}
-                className={`p-6 rounded-lg shadow-xl border-t-4 text-xl font-semibold transition-all duration-200 w-full text-center ${selectedClass && selectedClass.id === cls.id ? 'bg-blue-100 border-blue-500 text-blue-800' : 'bg-white border-gray-200 hover:bg-blue-50 text-gray-800'}`}
-                onClick={() => handleClassSelect(cls)}
-              >
-                {cls.name}
-              </button>
-            ))}
+          <h3 className="text-2xl font-semibold mb-4 text-green-700">Select a Teacher</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            {allTeachersData.map((teacher) => {
+              // Find classes for this teacher
+              const teacherClasses = allClassesData.filter(cls => Array.isArray(teacher.classes) && teacher.classes.includes(cls.id));
+              if (teacherClasses.length === 0) return null;
+              return (
+                <div key={teacher.id} className="bg-white rounded-lg shadow-xl border-t-4 border-blue-400 p-4">
+                  <div className="text-lg font-bold text-blue-700 mb-2">{teacher.name}</div>
+                  <div className="grid grid-cols-1 gap-2">
+                    {teacherClasses.map(cls => (
+                      <button
+                        key={cls.id}
+                        className={`p-4 rounded-lg shadow border text-base font-semibold transition-all duration-200 w-full text-center ${selectedClass && selectedClass.id === cls.id ? 'bg-blue-100 border-blue-500 text-blue-800' : 'bg-white border-gray-200 hover:bg-blue-50 text-gray-800'}`}
+                        onClick={() => handleClassSelect(cls)}
+                      >
+                        {cls.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
