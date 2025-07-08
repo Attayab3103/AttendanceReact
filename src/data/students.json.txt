@@ -1,1 +1,0 @@
-Deprecated: All student data is now loaded from Firebase.
