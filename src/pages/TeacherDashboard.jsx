@@ -1,5 +1,4 @@
-        
-        {/* Attendance Box */}
+{/* Attendance Box */}
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import Navbar from '../components/Navbar';
@@ -75,6 +74,29 @@ const TeacherDashboard = () => {
   const [newClassName, setNewClassName] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [classToDelete, setClassToDelete] = useState(null);
+
+  // Announcements state
+  const [announcements, setAnnouncements] = useState([]);
+  const [announcementText, setAnnouncementText] = useState("");
+  const [announcementsLoading, setAnnouncementsLoading] = useState(false);
+
+  // Load announcements for selected class
+  useEffect(() => {
+    if (!selectedClass) {
+      setAnnouncements([]);
+      return;
+    }
+    setAnnouncementsLoading(true);
+    const annRef = ref(db, `announcements/${selectedClass.id}`);
+    const unsub = onValue(annRef, (snapshot) => {
+      const val = snapshot.val() || {};
+      // Sort by timestamp descending
+      const arr = Object.entries(val).map(([id, a]) => ({ id, ...a })).sort((a, b) => b.timestamp - a.timestamp);
+      setAnnouncements(arr);
+      setAnnouncementsLoading(false);
+    });
+    return () => unsub();
+  }, [selectedClass]);
 
   // Load all students from Firebase
   useEffect(() => {
@@ -254,41 +276,41 @@ const TeacherDashboard = () => {
     try {
       // For both new and edit, require all status fields to be filled
     const allFilled = studentsData.every((student) => activityStatus[student.id] !== undefined && activityStatus[student.id] !== "");
-      if (!allFilled) {
-        toast.error("Please select status for all students.");
-        return;
-      }
-      if (editingActivityDate) {
-        await Promise.all(
-          studentsData.map((student) => {
-            const status = activityStatus[student.id];
-            return set(ref(db, `activities/${student.id}/${editingActivityDate}`), {
+    if (!allFilled) {
+      toast.error("Please select status for all students.");
+      return;
+    }
+    if (editingActivityDate) {
+      await Promise.all(
+        studentsData.map((student) => {
+          const status = activityStatus[student.id];
+          return set(ref(db, `activities/${student.id}/${editingActivityDate}`), {
+            subject: activitySubject,
+            description: activityDescription,
+            status: status,
+          });
+        })
+      );
+      toast.success("Activity updated successfully!");
+      setEditingActivityDate(null);
+    } else {
+      await Promise.all(
+        studentsData.map((student) => {
+          const status = activityStatus[student.id];
+          return set(
+            ref(db, `activities/${student.id}/${activityDate}`),
+            {
               subject: activitySubject,
               description: activityDescription,
               status: status,
-            });
-          })
-        );
-        toast.success("Activity updated successfully!");
-        setEditingActivityDate(null);
-      } else {
-        await Promise.all(
-          studentsData.map((student) => {
-            const status = activityStatus[student.id];
-            return set(
-              ref(db, `activities/${student.id}/${activityDate}`),
-              {
-                subject: activitySubject,
-                description: activityDescription,
-                status: status,
-              }
-            );
-          })
-        );
-        toast.success("Activity saved successfully!");
-      }
-      setActivityStatus({});
-      setActivityDescription("");
+            }
+          );
+        })
+      );
+      toast.success("Activity saved successfully!");
+    }
+    setActivityStatus({});
+    setActivityDescription("");
     } catch (err) {
       toast.error("Failed to save activity.");
     }
@@ -394,6 +416,27 @@ const TeacherDashboard = () => {
       return;
     }
     toast.success('Attendance submitted successfully!');
+  };
+
+  // --- Announcement Handlers ---
+  const handlePostAnnouncement = async (e) => {
+    e.preventDefault();
+    if (!announcementText.trim() || !selectedClass) return;
+    const newAnnRef = ref(db, `announcements/${selectedClass.id}/${Date.now()}`);
+    await set(newAnnRef, {
+      text: announcementText,
+      teacherId: teacher.id,
+      teacherName: teacher.name,
+      timestamp: Date.now(),
+    });
+    setAnnouncementText("");
+    toast.success("Announcement posted!");
+  };
+
+  const handleDeleteAnnouncement = async (id) => {
+    if (!selectedClass) return;
+    await set(ref(db, `announcements/${selectedClass.id}/${id}`), null);
+    toast.success("Announcement deleted!");
   };
 
   if (!loggedIn) {
@@ -568,43 +611,43 @@ const TeacherDashboard = () => {
     try {
       // For both new and edit, require all marks fields to be filled
     const allFilled = studentsData.every((student) => testMarks[student.id] !== undefined && testMarks[student.id] !== "");
-      if (!allFilled) {
-        toast.error("Please enter marks for all students.");
-        return;
-      }
-      if (editingTestDate) {
-        await Promise.all(
-          studentsData.map((student) => {
-            const marks = testMarks[student.id];
-            return set(ref(db, `tests/${student.id}/${editingTestDate}`), {
+    if (!allFilled) {
+      toast.error("Please enter marks for all students.");
+      return;
+    }
+    if (editingTestDate) {
+      await Promise.all(
+        studentsData.map((student) => {
+          const marks = testMarks[student.id];
+          return set(ref(db, `tests/${student.id}/${editingTestDate}`), {
+            subject: testSubject,
+            totalMarks: testTotalMarks,
+            description: testDescription,
+            marks: marks,
+          });
+        })
+      );
+      toast.success("Test updated successfully!");
+      setEditingTestDate(null);
+    } else {
+      await Promise.all(
+        studentsData.map((student) => {
+          const marks = testMarks[student.id];
+          return set(
+            ref(db, `tests/${student.id}/${testDate}`),
+            {
               subject: testSubject,
               totalMarks: testTotalMarks,
               description: testDescription,
               marks: marks,
-            });
-          })
-        );
-        toast.success("Test updated successfully!");
-        setEditingTestDate(null);
-      } else {
-        await Promise.all(
-          studentsData.map((student) => {
-            const marks = testMarks[student.id];
-            return set(
-              ref(db, `tests/${student.id}/${testDate}`),
-              {
-                subject: testSubject,
-                totalMarks: testTotalMarks,
-                description: testDescription,
-                marks: marks,
-              }
-            );
-          })
-        );
-        toast.success("Test marks saved successfully!");
-      }
-      setTestMarks({});
-      setTestDescription("");
+            }
+          );
+        })
+      );
+      toast.success("Test marks saved successfully!");
+    }
+    setTestMarks({});
+    setTestDescription("");
     } catch (err) {
       toast.error("Failed to save test marks.");
     }
@@ -612,33 +655,39 @@ const TeacherDashboard = () => {
 
   // --- Main Render ---
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-green-100 to-white flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-green-100 to-white flex flex-col w-full">
       <Navbar brandName="DAR-E-ARQAM SCHOOL (JOHAR TOWN)" />
       <div className="container mx-auto p-2 sm:p-4 flex-grow w-full max-w-2xl">
-        <div className="flex items-center mb-4">
+        <div className="flex flex-col sm:flex-row items-center mb-4 gap-2">
           <svg className="w-8 h-8 text-blue-500 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" /></svg>
-          <h2 className="text-3xl font-extrabold text-gray-800 tracking-tight">Teacher Dashboard</h2>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-800 tracking-tight">Teacher Dashboard</h2>
         </div>
-        <p className="text-gray-600 mb-6">Welcome Ma'am Aneela!</p>
+        <p className="text-gray-600 mb-6 text-base sm:text-lg">Welcome Ma'am Aneela!</p>
 
         {/* Box Selector */}
-        <div className="flex gap-4 mb-6">
-          <button
-            className={`flex-1 p-4 rounded-lg shadow text-lg font-semibold border-t-4 transition-all duration-200 ${activeBox === "attendance" ? "bg-blue-100 border-blue-500" : "bg-white border-gray-200 hover:bg-blue-50"}`}
-            onClick={() => setActiveBox("attendance")}
-          >Attendance</button>
-          <button
-            className={`flex-1 p-4 rounded-lg shadow text-lg font-semibold border-t-4 transition-all duration-200 ${activeBox === "test" ? "bg-blue-100 border-blue-500" : "bg-white border-gray-200 hover:bg-blue-50"}`}
-            onClick={() => setActiveBox("test")}
-          >Test</button>
-          <button
-            className={`flex-1 p-4 rounded-lg shadow text-lg font-semibold border-t-4 transition-all duration-200 ${activeBox === "activity" ? "bg-blue-100 border-blue-500" : "bg-white border-gray-200 hover:bg-blue-50"}`}
-            onClick={() => setActiveBox("activity")}
-          >Activity</button>
-          <button
-            className={`flex-1 p-4 rounded-lg shadow text-lg font-semibold border-t-4 transition-all duration-200 ${activeBox === "enroll" ? "bg-green-100 border-green-500" : "bg-white border-gray-200 hover:bg-green-50"}`}
-            onClick={() => setActiveBox("enroll")}
-          >Enroll Students</button>
+        <div className="w-full overflow-x-auto mb-6">
+          <div className="flex flex-row gap-2 sm:gap-4 min-w-[500px] sm:min-w-0">
+            <button
+              className={`flex-1 min-w-[120px] p-3 sm:p-4 rounded-lg shadow text-base sm:text-lg font-semibold border-t-4 transition-all duration-200 ${activeBox === "attendance" ? "bg-blue-100 border-blue-500" : "bg-white border-gray-200 hover:bg-blue-50"}`}
+              onClick={() => setActiveBox("attendance")}
+            >Attendance</button>
+            <button
+              className={`flex-1 min-w-[120px] p-3 sm:p-4 rounded-lg shadow text-base sm:text-lg font-semibold border-t-4 transition-all duration-200 ${activeBox === "test" ? "bg-blue-100 border-blue-500" : "bg-white border-gray-200 hover:bg-blue-50"}`}
+              onClick={() => setActiveBox("test")}
+            >Test</button>
+            <button
+              className={`flex-1 min-w-[120px] p-3 sm:p-4 rounded-lg shadow text-base sm:text-lg font-semibold border-t-4 transition-all duration-200 ${activeBox === "activity" ? "bg-blue-100 border-blue-500" : "bg-white border-gray-200 hover:bg-blue-50"}`}
+              onClick={() => setActiveBox("activity")}
+            >Activity</button>
+            <button
+              className={`flex-1 min-w-[120px] p-3 sm:p-4 rounded-lg shadow text-base sm:text-lg font-semibold border-t-4 transition-all duration-200 ${activeBox === "enroll" ? "bg-green-100 border-green-500" : "bg-white border-gray-200 hover:bg-green-50"}`}
+              onClick={() => setActiveBox("enroll")}
+            >Enroll Students</button>
+            <button
+              className={`flex-1 min-w-[120px] p-3 sm:p-4 rounded-lg shadow text-base sm:text-lg font-semibold border-t-4 transition-all duration-200 ${activeBox === "announcements" ? "bg-yellow-100 border-yellow-500" : "bg-white border-gray-200 hover:bg-yellow-50"}`}
+              onClick={() => setActiveBox("announcements")}
+            >Announcements</button>
+          </div>
         </div>
         {/* Tab Content */}
         {/* Tab Content Start - removed unnecessary fragment */}
@@ -1025,6 +1074,43 @@ const TeacherDashboard = () => {
                 </table>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Announcements Box */}
+        {activeBox === "announcements" && selectedClass && (
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-xl mb-6 border-t-4 border-yellow-400 w-full overflow-x-auto">
+            <h3 className="text-2xl font-semibold mb-4 text-yellow-700">Class Announcements for {selectedClass.name}</h3>
+            <form className="flex gap-2 mb-4" onSubmit={handlePostAnnouncement}>
+              <input
+                type="text"
+                className="border border-gray-300 rounded-md p-2 flex-grow"
+                placeholder="Write an announcement..."
+                value={announcementText}
+                onChange={e => setAnnouncementText(e.target.value)}
+              />
+              <button type="submit" className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 font-semibold">Post</button>
+            </form>
+            {announcementsLoading ? (
+              <div className="text-gray-500">Loading...</div>
+            ) : announcements.length === 0 ? (
+              <div className="text-gray-500">No announcements yet.</div>
+            ) : (
+              <ul className="space-y-3 max-w-full">
+                {announcements.map(a => (
+                  <li key={a.id} className="flex flex-col sm:flex-row sm:items-center justify-between bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded break-words max-w-full">
+                    <div className="w-full break-words">
+                      <div className="font-medium text-yellow-800 break-words whitespace-pre-line">{a.text}</div>
+                      <div className="text-xs text-gray-500">By {a.teacherName} &middot; {new Date(a.timestamp).toLocaleString()}</div>
+                    </div>
+                    <button
+                      className="ml-4 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-xs"
+                      onClick={() => handleDeleteAnnouncement(a.id)}
+                    >Delete</button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
       </div>

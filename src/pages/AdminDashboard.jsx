@@ -60,10 +60,10 @@ const AdminDashboard = () => {
 
   if (!adminAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-yellow-100 via-blue-100 to-white flex flex-col">
+      <div className="min-h-screen bg-gradient-to-br from-yellow-100 via-blue-100 to-white flex flex-col w-full">
         <Navbar brandName="DAR-E-ARQAM SCHOOL (JOHAR TOWN)" />
-        <div className="flex flex-col items-center justify-center flex-grow">
-          <div className="bg-white p-8 rounded-lg shadow-xl w-96 text-center border-t-4 border-yellow-400 mt-8">
+        <div className="flex flex-col items-center justify-center flex-grow w-full px-2">
+          <div className="bg-white p-4 sm:p-8 rounded-lg shadow-xl w-full max-w-xs sm:max-w-md text-center border-t-4 border-yellow-400 mt-8">
             <h2 className="text-2xl font-bold mb-4 text-yellow-700">Admin Login</h2>
             <input
               type="password"
@@ -90,39 +90,39 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-100 via-blue-100 to-white flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-yellow-100 via-blue-100 to-white flex flex-col w-full">
       <Navbar brandName="DAR-E-ARQAM SCHOOL (JOHAR TOWN)" />
       <div className="container mx-auto p-2 sm:p-4 flex-grow w-full max-w-2xl">
-        <div className="flex items-center mb-4">
+        <div className="flex flex-col sm:flex-row items-center mb-4 gap-2">
           <svg className="w-8 h-8 text-yellow-500 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" /></svg>
-          <h2 className="text-3xl font-extrabold text-gray-800 tracking-tight">Admin Dashboard</h2>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-800 tracking-tight">Admin Dashboard</h2>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow-xl border-t-4 border-yellow-400 w-full mb-8">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-xl border-t-4 border-yellow-400 w-full mb-8">
           <h3 className="text-xl font-bold mb-4 text-yellow-700">Create New Teacher PIN</h3>
-          <form className="flex flex-col gap-4" onSubmit={handleCreateTeacher}>
+          <form className="flex flex-col gap-4 w-full" onSubmit={handleCreateTeacher}>
             <input
               type="text"
-              className="border border-gray-300 p-2 rounded-md"
+              className="border border-gray-300 p-2 rounded-md w-full"
               placeholder="Teacher Name"
               value={name}
               onChange={e => setName(e.target.value)}
             />
             <input
               type="text"
-              className="border border-gray-300 p-2 rounded-md"
+              className="border border-gray-300 p-2 rounded-md w-full"
               placeholder="Teacher PIN"
               value={pin}
               onChange={e => setPin(e.target.value)}
             />
             <button
               type="submit"
-              className="bg-yellow-500 text-white py-2 px-4 rounded-md hover:bg-yellow-600 transition duration-300 shadow"
+              className="bg-yellow-500 text-white py-2 px-4 rounded-md hover:bg-yellow-600 transition duration-300 shadow w-full"
             >Create Teacher</button>
           </form>
           {success && <p className="text-green-600 mt-2">{success}</p>}
           {error && <p className="text-red-600 mt-2">{error}</p>}
         </div>
-        <div className="bg-white p-6 rounded-lg shadow-xl border-t-4 border-blue-400 w-full">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-xl border-t-4 border-blue-400 w-full overflow-x-auto">
           <h3 className="text-xl font-bold mb-4 text-blue-700">All Teachers</h3>
           <ul>
             {teachers.map(t => (

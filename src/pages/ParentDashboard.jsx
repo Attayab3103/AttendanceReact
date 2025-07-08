@@ -20,6 +20,8 @@ const ParentDashboard = () => {
   const [allClassesData, setAllClassesData] = useState([]);
   const [allTeachersData, setAllTeachersData] = useState([]);
   const [teacherMap, setTeacherMap] = useState({});
+  const [announcements, setAnnouncements] = useState([]);
+  const [announcementsLoading, setAnnouncementsLoading] = useState(false);
   // Load all teachers from Firebase
   useEffect(() => {
     const teachersRef = ref(db, 'teachers');
@@ -72,6 +74,23 @@ const ParentDashboard = () => {
     };
   }, []);
 
+  // Load announcements for selected class
+  useEffect(() => {
+    if (!selectedClass) {
+      setAnnouncements([]);
+      return;
+    }
+    setAnnouncementsLoading(true);
+    const annRef = ref(db, `announcements/${selectedClass.id}`);
+    const unsub = onValue(annRef, (snapshot) => {
+      const val = snapshot.val() || {};
+      const arr = Object.entries(val).map(([id, a]) => ({ id, ...a })).sort((a, b) => b.timestamp - a.timestamp);
+      setAnnouncements(arr);
+      setAnnouncementsLoading(false);
+    });
+    return () => unsub();
+  }, [selectedClass]);
+
   const handleClassSelect = (cls) => {
     setSelectedClass(cls);
     setRollNo('');
@@ -105,31 +124,31 @@ const ParentDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-100 via-blue-100 to-white flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-green-100 via-blue-100 to-white flex flex-col w-full">
       <Navbar brandName="DAR-E-ARQAM SCHOOL (JOHAR TOWN)" />
       <div className="container mx-auto p-2 sm:p-4 flex-grow w-full max-w-2xl">
-        <div className="flex items-center mb-4">
+        <div className="flex flex-col sm:flex-row items-center mb-4 gap-2">
           <svg className="w-8 h-8 text-green-500 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-          <h2 className="text-3xl font-extrabold text-gray-800 tracking-tight">Parent Dashboard</h2>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-800 tracking-tight">Parent Dashboard</h2>
         </div>
         <p className="text-gray-600 mb-6">Check your child's attendance, test, and activity reports easily.</p>
 
 
         <div className="mb-8">
-          <h3 className="text-2xl font-semibold mb-4 text-green-700">Select a Teacher</h3>
+          <h3 className="text-xl sm:text-2xl font-semibold mb-4 text-green-700">Select a Teacher</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             {allTeachersData.map((teacher) => {
               // Find classes for this teacher
               const teacherClasses = allClassesData.filter(cls => Array.isArray(teacher.classes) && teacher.classes.includes(cls.id));
               if (teacherClasses.length === 0) return null;
               return (
-                <div key={teacher.id} className="bg-white rounded-lg shadow-xl border-t-4 border-blue-400 p-4">
-                  <div className="text-lg font-bold text-blue-700 mb-2">{teacher.name}</div>
+                <div key={teacher.id} className="bg-white rounded-lg shadow-xl border-t-4 border-blue-400 p-4 w-full">
+                  <div className="text-base sm:text-lg font-bold text-blue-700 mb-2">{teacher.name}</div>
                   <div className="grid grid-cols-1 gap-2">
                     {teacherClasses.map(cls => (
                       <button
                         key={cls.id}
-                        className={`p-4 rounded-lg shadow border text-base font-semibold transition-all duration-200 w-full text-center ${selectedClass && selectedClass.id === cls.id ? 'bg-blue-100 border-blue-500 text-blue-800' : 'bg-white border-gray-200 hover:bg-blue-50 text-gray-800'}`}
+                        className={`p-3 sm:p-4 rounded-lg shadow border text-base font-semibold transition-all duration-200 w-full text-center ${selectedClass && selectedClass.id === cls.id ? 'bg-blue-100 border-blue-500 text-blue-800' : 'bg-white border-gray-200 hover:bg-blue-50 text-gray-800'}`}
                         onClick={() => handleClassSelect(cls)}
                       >
                         {cls.name}
@@ -143,19 +162,19 @@ const ParentDashboard = () => {
         </div>
 
         {selectedClass && (
-          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-xl mb-6 border-t-4 border-green-400 w-full">
+          <div className="bg-white p-3 sm:p-6 rounded-lg shadow-xl mb-6 border-t-4 border-green-400 w-full">
             <h3 className="text-2xl font-semibold mb-4 text-green-700">Enter Student ID for {selectedClass.name}</h3>
-            <form className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4" onSubmit={handleRollNoSubmit}>
+            <form className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4 w-full" onSubmit={handleRollNoSubmit}>
               <input
                 type="text"
-                className="border border-gray-300 p-2 rounded-md flex-grow focus:ring-2 focus:ring-green-300 text-base sm:text-lg"
+                className="border border-gray-300 p-2 rounded-md flex-grow focus:ring-2 focus:ring-green-300 text-base sm:text-lg w-full"
                 placeholder="Student ID"
                 value={rollNo}
                 onChange={(e) => setRollNo(e.target.value)}
               />
               <button
                 type="submit"
-                className="bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 transition duration-300 shadow text-base sm:text-lg"
+                className="bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 transition duration-300 shadow text-base sm:text-lg w-full sm:w-auto"
               >
                 View Student Report
               </button>
@@ -166,16 +185,34 @@ const ParentDashboard = () => {
 
         {student && (
           <>
-            <div className="mb-4 text-lg font-semibold text-blue-700">Student Name: {student.name}</div>
-            <div className="mt-8 bg-white p-4 sm:p-6 rounded-lg shadow-xl border-t-4 border-blue-400 w-full">
+            <div className="mb-4 text-base sm:text-lg font-semibold text-blue-700">Student Name: {student.name}</div>
+            <div className="mt-8 bg-white p-3 sm:p-6 rounded-lg shadow-xl border-t-4 border-blue-400 w-full overflow-x-auto">
               <h3 className="text-2xl font-semibold mb-4 text-blue-700">Attendance Report</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <AttendanceSummary attendance={attendanceData} rollNo={student.id} />
                 <AttendanceTable attendanceRecords={attendanceData[student.id] || {}} />
               </div>
             </div>
+            {/* Announcements Section */}
+            <div className="mt-8 bg-white p-3 sm:p-6 rounded-lg shadow-xl border-t-4 border-yellow-400 w-full">
+              <h3 className="text-2xl font-semibold mb-4 text-yellow-700">Teacher Announcements</h3>
+              {announcementsLoading ? (
+                <div className="text-gray-500">Loading...</div>
+              ) : announcements.length === 0 ? (
+                <div className="text-gray-500">No announcements yet.</div>
+              ) : (
+                <ul className="space-y-3">
+                  {announcements.map(a => (
+                    <li key={a.id} className="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded">
+                      <div className="font-medium text-yellow-800">{a.text}</div>
+                      <div className="text-xs text-gray-500">By {a.teacherName} &middot; {new Date(a.timestamp).toLocaleString()}</div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
             {/* Test Report Section */}
-            <div className="mt-8 bg-white p-4 sm:p-6 rounded-lg shadow-xl border-t-4 border-blue-400 w-full">
+            <div className="mt-8 bg-white p-3 sm:p-6 rounded-lg shadow-xl border-t-4 border-blue-400 w-full overflow-x-auto">
               <h3 className="text-2xl font-semibold mb-4 text-blue-700">Test Report</h3>
               {testData[student.id] ? (
                 <div className="overflow-x-auto">
@@ -209,7 +246,7 @@ const ParentDashboard = () => {
               )}
             </div>
             {/* Activity Report Section */}
-            <div className="mt-8 bg-white p-4 sm:p-6 rounded-lg shadow-xl border-t-4 border-green-400 w-full">
+            <div className="mt-8 bg-white p-3 sm:p-6 rounded-lg shadow-xl border-t-4 border-green-400 w-full overflow-x-auto">
               <h3 className="text-2xl font-semibold mb-4 text-green-700">Activity Report</h3>
               {activityData[student.id] ? (
                 <div className="overflow-x-auto">
